@@ -4,28 +4,35 @@ import ru.egartech.jdbc.starter.util.ConnectionManager;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JdbcRunner {
 
     public static void main(String[] args) throws SQLException {
-        String sql = """
-                SELECT *
-                FROM docs.documents
-                """;
-        try (var connection = ConnectionManager.open();
-             var statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
-            System.out.println(connection.getSchema());
-            System.out.println(connection.getTransactionIsolation());
+//        String codeType = "'02' OR '' = ''";
+//        String codeType = "'02' OR '' = ''; DROP TABLE docs.documents";
+        String codeType = " '02' ";
+        var result = getDocsId(codeType);
+        System.out.println(result);
+    }
 
-            var executeResult = statement.executeQuery(sql);
-            while (executeResult.next()) {
-                System.out.println(executeResult.getLong("id"));
-                System.out.println(executeResult.getString("series"));
-                System.out.println(executeResult.getString("number"));
-                System.out.println(executeResult.getString("name"));
-                System.out.println(executeResult.getString("code_type"));
-                System.out.println("------");
+    private static List<Long> getDocsId(String codeType) throws SQLException {
+        String sql = """
+                SELECT id
+                FROM docs.documents
+                WHERE code_type = %s
+                """.formatted(codeType);
+        List<Long> result = new ArrayList<>();
+        try (var connection = ConnectionManager.open();
+             var statement = connection.createStatement()) {
+            var resultSet = statement.executeQuery(sql);
+            while (resultSet.next()) {
+//                result.add(resultSet.getLong("id"));
+                result.add(resultSet.getObject("id", Long.class)); // NULL safe
             }
         }
+
+        return result;
     }
 }
