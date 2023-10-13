@@ -3,36 +3,32 @@ package ru.egartech.jdbc.starter;
 import ru.egartech.jdbc.starter.util.ConnectionManager;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class TransactionRunner {
 
     public static void main(String[] args) throws SQLException {
-        long infoId = 3;
-        var deleteDocSql = "DELETE FROM docs d WHERE d.info_id = ?";
-        var deleteInfoSql = "DELETE FROM info i WHERE i.id = ?";
+        long infoId = 5;
+        var deleteDocSql = "DELETE FROM docs d WHERE d.info_id = " + infoId;
+        var deleteInfoSql = "DELETE FROM info i WHERE i.id = " + infoId;
+        var createTableSql = "CREATE TABLE test9 (id SERIAL PRIMARY KEY);";
 // выносим Сonnection и Statement из блока try with resourse чтобы обрабатывать исключения самостоятельно
         Connection connection = null;
-        PreparedStatement deleteInfoStatement = null;
-        PreparedStatement deleteDocStatement = null;
+        Statement statement = null;
+//        PreparedStatement deleteInfoStatement = null;
+//        PreparedStatement deleteDocStatement = null;
         try {
             connection = ConnectionManager.open();
-            deleteDocStatement = connection.prepareStatement(deleteDocSql);
-            deleteInfoStatement = connection.prepareStatement(deleteInfoSql);
-// отключаем автоматический Commit
+// отключаем автоматический Commit (делаем перед выполнением первого запроса)
             connection.setAutoCommit(false);
 
-            deleteDocStatement.setLong(1, infoId);
-            deleteInfoStatement.setLong(1, infoId);
+            statement = connection.createStatement();
+            statement.addBatch(deleteDocSql);
+            statement.addBatch(deleteInfoSql);
+            statement.addBatch(createTableSql);
 
-            deleteDocStatement.executeUpdate();
-// прерывание выполнения транзакций (для тестирования)
-/*            if (true) {
-                throw new RuntimeException("Ooops");
-            }*/
-
-            deleteInfoStatement.executeUpdate();
+            var ints = statement.executeBatch();
 // выполняем commit
             connection.commit();
         } catch (Exception e) {
@@ -45,11 +41,8 @@ public class TransactionRunner {
             if (connection != null) {
                 connection.close();
             }
-            if (deleteInfoStatement != null) {
-                deleteInfoStatement.close();
-            }
-            if (deleteDocStatement != null) {
-                deleteDocStatement.close();
+            if (statement != null) {
+                statement.close();
             }
         }
     }
