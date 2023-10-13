@@ -29,6 +29,15 @@ public class JdbcRunner {
         List<Long> result = new ArrayList<>();
         try (var connection = ConnectionManager.open();
              var preparedStatement = connection.prepareStatement(sql)) {
+    // ограничение количества строк, которые может вернуть запрос
+            preparedStatement.setFetchSize(50);
+    // Устанавливает количество секунд, в течение которых драйвер будет
+    // ждать выполнения объекта Statement , до заданного количества секунд
+            preparedStatement.setQueryTimeout(10);
+    // Устанавливает ограничение на максимальное количество строк, которое может содержать любой объект ResultSet ,
+    // сгенерированный этим объектом Statement , до заданного числа
+            preparedStatement.setMaxRows(100);
+
             System.out.println(preparedStatement);
             preparedStatement.setTimestamp(1, Timestamp.valueOf(start));
             System.out.println(preparedStatement);
